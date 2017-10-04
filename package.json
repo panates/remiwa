@@ -23,7 +23,7 @@
     "express": "^4.16.1",
     "putil-isplainobject": "^1.0.1",
     "putil-merge": "^1.1.2",
-    "putil-stringify": "^1.0.0",
+    "putil-stringify": "^1.1.0",
     "xtyped": "^1.0.2"
   },
   "devDependencies": {
