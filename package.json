@@ -1,5 +1,5 @@
 {
-  "name": "restmw",
+  "name": "remiwa",
   "description": "Rest middleware",
   "version": "1.0.0",
   "author": "Panates Ltd.",
@@ -7,7 +7,7 @@
     "Eray Hanoglu <e.hanoglu@panates.com>"
   ],
   "license": "MIT",
-  "repository": "panates/restmw",
+  "repository": "panates/remiwa",
   "main": "lib/apiservice.js",
   "keywords": [
     "javascript",
