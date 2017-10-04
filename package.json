@@ -8,7 +8,7 @@
   ],
   "license": "MIT",
   "repository": "panates/remiwa",
-  "main": "lib/apiservice.js",
+  "main": "lib/index.js",
   "keywords": [
     "javascript",
     "rest",
