@@ -22,7 +22,7 @@
     "errorex": "^1.0.5",
     "express": "^4.16.1",
     "putil-isplainobject": "^1.0.1",
-    "putil-merge": "^1.1.2",
+    "putil-merge": "^1.1.4",
     "putil-stringify": "^1.1.0",
     "xtyped": "^1.0.2"
   },
