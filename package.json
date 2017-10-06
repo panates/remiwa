@@ -21,6 +21,7 @@
     "body-parser": "^1.18.2",
     "errorex": "^1.0.5",
     "express": "^4.16.1",
+    "putil-defineconst": "^1.0.0",
     "putil-isplainobject": "^1.0.1",
     "putil-merge": "^1.1.4",
     "putil-stringify": "^1.1.0",
