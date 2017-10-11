@@ -7,7 +7,7 @@ const express = require('express');
 
 const ApiService = require('..');
 
-describe('ApiService', function() {
+describe('Endpoint', function() {
 
   var app;
   var server;

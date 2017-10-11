@@ -1,157 +1,198 @@
-/* remiwa
- ------------------------
- (c) 2017-present Panates
- This file may be freely distributed under the MIT license.
- For details and documentation:
- https://github.com/panates/remiwa
- */
+/* eslint-disable */
 
-const EventEmitter = require('events').EventEmitter;
-const errorex = require('errorex');
-const express = require('express');
-const isPlainObject = require('putil-isplainobject');
-const merge = require('putil-merge');
-const Schema = require('xtyped');
+const assert = require('assert');
+const http = require('http');
+const request = require('supertest');
 
-const Endpoint = require('./endpoint');
+const ApiService = require('..');
 
-const ENDPOINT_NAME_REGEX = /^[A-Za-z]\w*$/;
-const ArgumentError = errorex.ArgumentError;
+describe('ApiService', function() {
 
-/**
- * Expose `ApiService`.
- */
+  var service;
 
-/**
- * Create an rest api router
- *
- * @return {Function}
- * @api public
- */
-
-function ApiService(options) {
-  if (!(this instanceof ApiService))
-    return new ApiService(options);
-
-  options = options || {};
-
-  function service(req, res, next) {
-    service.handler(req, res, next || function(e) {
-      if (e) {
-        res.writeHead(e.status ? e.status : 500);
-        res.end(String(e));
-        return;
-      }
-      res.writeHead(404);
-      res.end();
-    });
-  }
-
-  // inherit from the correct prototype
-  Object.setPrototypeOf(service, this);
-
-  service.endpoints = {};
-  service.handler = new express.Router();
-  service.schema = new Schema();
-
-  /* Mount event emitter first */
-  service.handler.use(function(req, res, next) {
-    service.emit('request', req);
-    next();
+  beforeEach(function() {
+    service = ApiService();
   });
 
-  /* Mount middle-ware router */
-  service._mwrouter = new express.Router(options);
-  service.handler.use(service._mwrouter);
-
-  /* Mount endpoint router */
-  service._eprouter = new express.Router(options);
-  service.handler.use(service._eprouter);
-
-  /* mount error handler last */
-  service.handler.use(function(err, req, res, next) {
-    const e = {message: err.message};
-    Object.getOwnPropertyNames(err).forEach(function(key) {
-      if (!(key === 'stack' || key === 'name'))
-        e[key] = err[key];
-    });
-    e.url = req.originalUrl;
-    e.status = err.status ? err.status : 500;
-    if (service.listenerCount('error') > 0)
-      service.emit('error', err, e, req);
-    if (!res.headersSent) {
-      res.status(e.status);
-      res.setHeader('Content-Type', 'application/json');
+  it('should check config argument', function(done) {
+    var t = 0;
+    try {
+      service.define();
+    } catch (e) {
+      t++;
     }
-    res.end(JSON.stringify({error: e}));
+    assert.equal(t, 1);
+    try {
+      service.define(123);
+    } catch (e) {
+      t++;
+    }
+    assert.equal(t, 2);
+    try {
+      service.define([]);
+    } catch (e) {
+      t++;
+    }
+    assert.equal(t, 3);
+    done();
   });
 
-  return service;
-}
+  it('should check `operationId` property', function(done) {
+    try {
+      service.define({
+        route: '/clients',
+        method: 'get'
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+  });
 
-/**
- * ApiService prototype inherits from a Function.
- */
+  it('should check `method` property', function(done) {
+    try {
+      service.define({
+        operationId: 'listClients',
+        route: '/clients',
+        method: 'aaa'
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+  });
 
-/* istanbul ignore next */
-ApiService.prototype = function() {};
+  it('should check `route` property is not empty', function(done) {
+    try {
+      service.define({
+        operationId: 'listClients',
+        method: 'get',
+        handler: function(req, res, next) {}
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+  });
 
-/**
- * mixin EventEmitter
- */
-merge({descriptor: true}, ApiService.prototype, EventEmitter.prototype);
+  it('should check `route` property is valid', function(done) {
+    try {
+      service.define({
+        operationId: 'listClients',
+        route: 123,
+        method: 'get',
+        handler: function(req, res, next) {}
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+  });
 
-/**
- *
- * @param {Object} cfg
- * @param {String} cfg.operationId
- * @return {Endpoint}
- */
-ApiService.prototype.define = function define(cfg) {
-
-  if (!(cfg && isPlainObject(cfg)))
-    throw new ArgumentError('Argument `config` is not defined or invalid');
-
-  if (!(cfg.operationId && cfg.operationId.match(ENDPOINT_NAME_REGEX)))
-    throw new ArgumentError('`operationId` is not defined or invalid');
-
-  if (this.endpoints[cfg.operationId])
-    throw new ArgumentError('Endpoint "' + cfg.operationId +
-        '" already defined');
-
-  const endpoint = new Endpoint(this, cfg);
-
-  try {
-    this.schema.define(endpoint.operationId + 'In', {
-      base: 'object',
-      items: endpoint.parameters
+  it('should operationId can be defined once', function(done) {
+    service.define({
+      operationId: 'listClients',
+      route: '/clients',
+      method: 'get',
+      handler: function(req, res, next) {}
     });
-  } catch (e) {
-    e.message = 'Unable to define ' + endpoint.operationId + 'In. ' + e.message;
-    throw e;
-  }
-  try {
-    this.schema.define(endpoint.operationId + 'Out',
-        endpoint.output || 'any');
-  } catch (e) {
-    e.message =
-        'Unable to define ' + endpoint.operationId + 'Out. ' + e.message;
-  }
-
-  this._eprouter[endpoint.method](endpoint.route, function EndpointRouter(req, res, next) {
-    return endpoint._router(req, res, next);
+    try {
+      service.define({
+        operationId: 'listClients',
+        route: '/clients',
+        method: 'get',
+        handler: function(req, res, next) {}
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
   });
 
-  this.endpoints[endpoint.operationId] = endpoint;
-  return endpoint;
-};
+  it('should create a new type for parameters object', function(done) {
+    service.define({
+      operationId: 'listClients',
+      route: '/clients',
+      method: 'get',
+      handler: function(req, res, next) {}
+    });
+    assert.equal(service.schema.get('listClientsIn').base.name, 'Object');
+    done();
+  });
 
-/**
- *
- * @param {Function} handlers
- */
-ApiService.prototype.use = function define(handlers) {
-  this._mwrouter.use.apply(this.handler, arguments);
-};
+  it('should create a new type for output object', function(done) {
+    service.define({
+      operationId: 'listClients',
+      route: '/clients',
+      method: 'get',
+      output: 'string',
+      handler: function(req, res, next) {}
+    });
+    assert.equal(service.schema.get('listClientsOut').base.name, 'String');
+    done();
+  });
 
-module.exports = ApiService;
+  it('should verify `parameters` parameter', function(done) {
+    try {
+      service.define({
+        operationId: 'listClients',
+        route: '/clients',
+        method: 'get',
+        parameters: '1aa',
+        handler: function(req, res, next) {}
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+    done();
+  });
+
+  it('should verify `output` parameter', function(done) {
+    try {
+      service.define({
+        operationId: 'listClients',
+        route: '/clients',
+        method: 'get',
+        output: '1aa',
+        handler: function(req, res, next) {}
+      });
+    } catch (e) {
+      done();
+      return;
+    }
+    assert(0);
+    done();
+  });
+
+  it('should use other middle-ware', function(done) {
+    service.use(function(req, res, next) {
+      next();
+    });
+    var server = http.createServer(service);
+    request(server)
+        .post('/')
+        .send('{}')
+        .expect(404, done);
+  });
+
+  it('should use other middle-ware', function(done) {
+    service.use(function(req, res, next) {
+      const e = new Error('Any error');
+      e.status = 400;
+      next(e);
+    });
+    var server = http.createServer(service);
+    request(server)
+        .post('/')
+        .send('{}')
+        .expect(400, done);
+  });
+
+});
