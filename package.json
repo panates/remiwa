@@ -25,11 +25,11 @@
     "putil-isplainobject": "^1.0.1",
     "putil-merge": "^1.1.4",
     "putil-stringify": "^1.1.0",
-    "xtyped": "^1.1.0"
+    "xtyped": "^1.2.0"
   },
   "devDependencies": {
     "babel-eslint": "^8.0.0",
-    "eslint": "^4.8.0",
+    "eslint": "^4.9.0",
     "eslint-config-google": "^0.9.1",
     "istanbul": "^0.4.5",
     "mocha": "^4.0.1",
